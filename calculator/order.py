@@ -1,25 +1,26 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from contextlib import contextmanager
 
-from . import Item, Prices
+from . import Item, BaseUnit
 
 
 @dataclass
-class Order:
+class Order(BaseUnit):
     number: int
     name: str
-    prices: Prices
 
     def __post_init__(self) -> None:
-        self.items = []
+        self.items: list[Item] = []
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: int) -> Item:
         return self.items[key]
 
     @property
     def price(self) -> float:
         return sum(item.price for item in self.items)
 
-    def add_item(self, name: str) -> Item:
-        item = Item(name, self.prices)
+    @contextmanager
+    def add_item(self, name: str):
+        item = Item(self.prices, self.multipliers, name)
         self.items.append(item)
-        return item
+        yield item
