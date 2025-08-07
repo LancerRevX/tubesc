@@ -1,36 +1,76 @@
 from dataclasses import dataclass
 from contextlib import contextmanager
+from abc import ABC, abstractmethod
 
-from . import BaseUnit, Tube, Pipe, Cut
+from . import BaseUnit, Tube, Pipe, Cut, Prices, Multipliers
 
 
 @dataclass
-class Item(BaseUnit):
+class BaseItem:
     name: str
-    base_price = 0.0
-    base_area = 0.0
-    sundries_count = 0
-    sundry_welding_count = 0
-    welding_length = 0.0
-    riveting_count = 0
-    bending_count = 0
+    project_hours: int = 0
+    sundries_count: int = 0
+    sundry_welding_count: int = 0
+    welding_length: float = 0.0
+    riveting_count: int = 0
+    bending_count: int = 0
     is_painted = False
     is_cleaned = False
+    price: float | None = None
 
+    @property
+    @abstractmethod
+    def cutting_price(self) -> float:
+        pass
+
+    @property
+    @abstractmethod
+    def cutting_length(self) -> float:
+        pass
+
+    @property
+    @abstractmethod
+    def incuts_count(self) -> int:
+        pass
+
+    @abstractmethod
+    def calculate_price(
+        self, cutting_price: float, prices: Prices, multipliers: Multipliers
+    ):
+        pass
+
+
+@dataclass
+class TubeItem(BaseItem):
     def __post_init__(self):
         self.tubes: list[Tube] = []
-        self.items: list[Item] = []
+        self.sheet_items: list[SheetItem] = []
 
     def __getitem__(self, key: int) -> Tube:
         return self.tubes[key]
 
     @property
-    def price(self) -> float:
-        result = 0.0
+    def incuts_count(self) -> int:
+        return sum(tube.incuts_count for tube in self.tubes)
+
+    @property
+    def cutting_length(self) -> float:
+        return sum(tube.cutting_length for tube in self.tubes)
+
+    @property
+    def cutting_price(self) -> float:
+        return sum(tube.cutting_price for tube in self.tubes)
+
+    def calculate_price(
+        self, cutting_price: float, prices: Prices, multipliers: Multipliers
+    ) -> None:
+        for
+
+        result = project_price + cutting_price
 
         result += sum(tube.price for tube in self.tubes)
 
-        result += sum(item.price for item in self.items)
+        result += sum(item.price for item in self.sheet_items)
 
         welding = (
             self.welding_length * self.prices.welding
@@ -56,8 +96,7 @@ class Item(BaseUnit):
 
     @property
     def area(self) -> float:
-        result = self.base_area
-        result += sum(tube.area for tube in self.tubes)
+        result = sum(tube.area for tube in self.tubes)
         return result
 
     @contextmanager
@@ -72,6 +111,14 @@ class Item(BaseUnit):
 
     @contextmanager
     def add_item(self, name: str):
-        item = Item(self.prices, self.multipliers, name)
+        item = BaseItem(self.prices, self.multipliers, name)
         self.items.append(item)
         yield item
+
+
+@dataclass
+class SheetItem(BaseItem):
+    sheet_price: float = 0.0
+    area: float = 0.0
+    sundries_count = 0
+    sundry_welding_count = 0

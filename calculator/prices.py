@@ -9,3 +9,4 @@ class Prices:
     painting: float
     riveting: float
     bending: float
+    project: float

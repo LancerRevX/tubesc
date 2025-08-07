@@ -3,7 +3,7 @@ from calculator import (
     RectPipe,
     Prices,
     Multipliers,
-    Item,
+    BaseItem,
     Cut,
     RectHole,
     RoundHole,

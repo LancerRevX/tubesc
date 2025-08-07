@@ -4,14 +4,38 @@ from . import BaseUnit, Pipe, Hole, Cut
 
 
 @dataclass
-class Tube(BaseUnit):
+class Tube:
     pipe: Pipe
     length: float
     is_weld_cleaned: bool = False
     is_cleaned: bool = False
     holes: list[Hole] = field(default_factory=list[Hole])
-    left_cut: Cut = field(default_factory=Cut)
-    right_cut: Cut = field(default_factory=Cut)
+    left_cut: Cut | None = field(default_factory=Cut)
+    right_cut: Cut | None = field(default_factory=Cut)
+
+    @property
+    def cutting_price(self) -> float:
+        return (
+            self.incuts_count * self.pipe.incut_price
+            + self.cutting_length * self.pipe.cutting_price
+        )
+
+    @property
+    def incuts_count(self) -> int:
+        return (
+            (self.left_cut is not None)
+            + (self.right_cut is not None)
+            + len(self.holes)
+        )
+
+    @property
+    def cutting_length(self) -> float:
+        result = sum(hole.cut_length for hole in self.holes)
+        if self.left_cut is not None:
+            result += self.pipe.cut_length(self.left_cut)
+        if self.right_cut is not None:
+            result += self.pipe.cut_length(self.right_cut)
+        return result
 
     @property
     def price(self) -> float:
