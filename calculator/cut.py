@@ -5,3 +5,4 @@ from typing import Literal
 class Cut:
     angle: int = 90
     side: Literal['width', 'height'] | None = None
+    welding_ratio: float = 0.0

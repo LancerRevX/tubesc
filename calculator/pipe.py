@@ -8,6 +8,7 @@ from . import Cut
 @dataclass
 class Pipe(ABC):
     price: float
+    thickness: float
     incut_price: float
     cutting_price: float
 
@@ -25,6 +26,9 @@ class Pipe(ABC):
 class RoundPipe(Pipe):
     diameter: float
 
+    def __str__(self) -> str:
+        return f"D{self.diameter}x{self.thickness}"
+
     @property
     def perimeter(self) -> float:
         return self.diameter * pi
@@ -37,6 +41,10 @@ class RoundPipe(Pipe):
 class RectPipe(Pipe):
     width: float
     height: float
+
+    def __str__(self) -> str:
+        first, second = sorted([self.width, self.height])
+        return f"{first}x{second}x{self.thickness}"
 
     @property
     def perimeter(self) -> float:
