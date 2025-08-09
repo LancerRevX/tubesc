@@ -34,6 +34,10 @@ class Tube:
         if not self.is_ours:
             return 0.0
         return self.pipe.cost * self.length
+    
+    @property
+    def carrying_cost(self) -> float:
+        return self.pipe.carrying_cost * self.length
 
     @property
     def cutting_cost(self) -> float:
@@ -44,10 +48,16 @@ class Tube:
 
     @property
     def incuts_count(self) -> int:
+        holes_count = 0
+        for hole in self.holes:
+            if hole.through:
+                holes_count += hole.count * 2
+            else:
+                holes_count += hole.count
         return (
             (self.left_cut is not None)
             + (self.right_cut is not None)
-            + len(self.holes)
+            + holes_count
             + len(self.bended_cuts)
         )
 
@@ -111,9 +121,8 @@ class Tube:
             ),
         )
 
-    def add_holes(self, hole: Hole, count: int = 1) -> None:
-        for _ in range(count):
-            self.holes.append(hole)
+    def add_hole(self, hole: Hole) -> None:
+        self.holes.append(hole)
 
     def add_bended_cuts(self, cut: Cut, count: int = 1) -> None:
         for _ in range(count):

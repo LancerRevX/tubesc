@@ -6,4 +6,4 @@ class Price:
     final: float
 
     def __str__(self) -> str:
-        return f'{self.cost:,.2f} -> {self.final:,.2f}'
+        return f'{self.cost:,.2f} руб -> {self.final:,.2f} руб'

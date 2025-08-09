@@ -226,27 +226,105 @@ class TubeItem(BaseItem):
             result += f"\t{tube}\n"
         for sheet in self.sheet_items:
             result += f"\t{sheet}\n"
-
-        result += f"\n\tРезка: {self.prices['cutting']}\n"
-        for tube in self.tubes:
-            result += f"\t\t{tube}: {tube.cutting_length:,.2f} мм, {tube.cutting_cost:,.2f} руб.\n"
-            if tube.left_cut is not None:
-                result += f'\t\t\t{tube.left_cut.angle}°: {tube.pipe.get_cut_length(tube.left_cut):,.2f} мм\n'
-            if tube.right_cut is not None:
-                result += f'\t\t\t{tube.right_cut.angle}°: {tube.pipe.get_cut_length(tube.right_cut):,.2f} мм\n'
-            for hole in tube.holes:
-                result += f'\t\t\t{hole}: {hole.length:,.2f} мм\n'
         result += "\n"
 
-        sorted_prices = dict(
-            sorted(
-                self.prices.items(), key=lambda item: item[1].cost, reverse=True
-            )
-        )
-        del sorted_prices["total"]
-        del sorted_prices["cutting"]
-        for key, price in sorted_prices.items():
-            result += f"\t{key}:\t\t{price}\n"
+        if self.prices["pipe"].cost > 0:
+            result += f"\tТруба: {self.prices['pipe']}\n"
+            for tube in self.tubes:
+                if tube.pipe_cost == 0:
+                    continue
+                result += f"\t\t{tube}: {tube.pipe.cost * 1000} руб/м, {tube.pipe_cost} руб\n"
+            result += "\n"
+
+        result += f"\tРезка: {self.prices['cutting']}\n"
+        for tube in self.tubes:
+            result += f"\t\t{tube}: {tube.incuts_count} врезки / {tube.cutting_length:,.2f} мм, {tube.cutting_cost:,.2f} руб\n"
+            if tube.left_cut is not None:
+                result += f"\t\t\t{tube.left_cut}: {tube.pipe.get_cut_length(tube.left_cut):,.2f} мм\n"
+            if tube.right_cut is not None:
+                result += f"\t\t\t{tube.right_cut}: {tube.pipe.get_cut_length(tube.right_cut):,.2f} мм\n"
+            for hole in tube.holes:
+                result += f"\t\t\t{hole}: {hole.length:,.2f} мм\n"
+        result += "\n"
+
+        if self.prices["welding"].cost > 0:
+            result += f"\tСварка: {self.welding_length:,.2f} мм, {self.prices['welding']}\n"
+            for tube in self.tubes:
+                if tube.welding_length == 0:
+                    continue
+                result += f"\t\t{tube}: {tube.welding_length:,.2f} мм\n"
+            for sheet in self.sheet_items:
+                if sheet.welding_length == 0:
+                    continue
+                result += f"\t\t{sheet.name}: {sheet.welding_length:,.2f} мм\n"
+            result += "\n"
+
+        if self.prices['weld_cleaning'].cost > 0:
+            result += f'\tЗачистка сварного шва: {self.prices['weld_cleaning']}\n'
+            for tube in self.tubes:
+                if not tube.is_weld_cleaned:
+                    continue
+                result += f'\t\t{tube}: {tube.length} мм\n'
+            if self.is_weld_cleaned:
+                result += f'\t\tСварка: {self.welding_length:,.2f} мм\n'
+            result += '\n'
+
+        if self.prices['cleaning'].cost > 0:
+            result += f'\tЗачистка корщёткой: {self.prices['cleaning']}\n'
+            for tube in self.tubes:
+                if not tube.is_cleaned:
+                    continue
+                result += f'\t\t{tube}: {tube.area / 1_000_000:,.2f} м2\n'
+            for sheet in self.sheet_items:
+                if not sheet.is_cleaned:
+                    continue
+                result += f'\t\t{sheet.name}: {sheet.area / 1_000_000:,.2f} м2\n'
+            result += '\n'
+
+        if self.prices["painting"].cost > 0:
+            result += f"\tПокраска: {self.area / 1_000_000:,.2f} м2, {self.prices['painting']}\n\n"
+
+        if self.prices["sundries"].cost > 0:
+            result += f"\tМетизы: {self.sundries_count} шт, {self.prices['sundries']}\n"
+            for sheet in self.sheet_items:
+                if sheet.sundries_count == 0:
+                    continue
+                result += f"\t\t{sheet.name}: {sheet.sundries_count} шт\n"
+            result += "\n"
+
+        if self.prices["riveting"].cost > 0:
+            result += f"\tЗаклёпывание: {self.riveting_count} шт, {self.prices['riveting']}\n"
+            for sheet in self.sheet_items:
+                if sheet.riveting_count == 0:
+                    continue
+                result += f"\t\t{sheet.name}: {sheet.riveting_count} шт\n"
+            result += "\n"
+
+        if self.prices['bending'].cost > 0:
+            result += f'\tГибка: {self.bending_count} шт, {self.prices['bending']}\n'
+            for tube in self.tubes:
+                if tube.bending_count == 0:
+                    continue
+                result += f'\t\t{tube}: {tube.bending_count} шт\n'
+            for sheet in self.sheet_items:
+                if sheet.bending_count == 0:
+                    continue
+                result += f'\t\t{sheet.name}: {sheet.bending_count} шт\n'
+            result += '\n'
+
+        result += f'\tТаскание: {self.prices['carrying']}\n\n'
+
+        if self.prices['sheet'].cost > 0:
+            result += f'\tОТК: {self.prices['sheet']}\n'
+            for sheet in self.sheet_items:
+                result += f'\t\t{sheet.name}: {sheet.sheet_cost:,.2f} руб\n'
+            result += '\n'
+
+        if self.prices['transport'].cost > 0:
+            result += f'\tТранспортировка: {self.prices['transport']}\n\n'
+
+        result += f'\tПроектировка: {self.project_hours} ч, {self.prices['project']}\n\n'
+
         return result
 
     @property
@@ -319,6 +397,7 @@ class TubeItem(BaseItem):
         self.calculate_cleaning_price(costs, multipliers)
         self.calculate_painting_price(costs, multipliers)
         self.calculate_sundries_price(costs, multipliers)
+        self.calculate_carrying_price(multipliers)
 
         self.prices["total"] = Price(
             cost=sum(price.cost for price in self.prices.values()),
@@ -344,6 +423,12 @@ class TubeItem(BaseItem):
         weld_cleaning_cost = weld_cleaning_length * costs.weld_cleaning
         self.prices["weld_cleaning"] = self.get_work_price(
             weld_cleaning_cost, multipliers
+        )
+
+    def calculate_carrying_price(self, multipliers: Multipliers):
+        carrying_cost = sum(tube.carrying_cost for tube in self.tubes)
+        self.prices["carrying"] = self.get_work_price(
+            carrying_cost, multipliers
         )
 
     @contextmanager

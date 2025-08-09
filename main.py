@@ -18,6 +18,7 @@ pipe = RectPipe(
     cost=1018 / 1000,
     incut_cost=5,
     cutting_cost=34 / 1000,
+    carrying_cost=75 / 1000,
 )
 costs = Costs(
     welding=600 / 1000,
@@ -38,20 +39,21 @@ with order.add_tube_item("Труба 4500") as item:
     item.is_painted = True
     item.project_hours = 1
     item.transport_cost = 450
+    item.is_weld_cleaned = True
     with item.add_tube(pipe, 4500) as tube:
         tube.is_weld_cleaned = True
         tube.is_cleaned = True
         tube.left_cut = Cut(45, welding_ratio=0.5)
         tube.right_cut = Cut(90, welding_ratio=1)
-        tube.add_holes(RectHole(98, 398))
-        tube.add_holes(RoundHole(8), 4)
+        tube.add_hole(RectHole(98, 398))
+        tube.add_hole(RoundHole(8, count=4))
     with item.add_tube(pipe, 647) as tube:
         tube.is_weld_cleaned = True
         tube.is_cleaned = True
         tube.left_cut = Cut(45, welding_ratio=0.5)
         tube.right_cut = Cut(90, welding_ratio=1)
-        tube.add_holes(RectHole(98, 398))
-        tube.add_holes(RoundHole(8), 4)
+        tube.add_hole(RectHole(98, 398))
+        tube.add_hole(RoundHole(8, count=4))
     with item.add_sheet_item("Фланец") as sheet:
         sheet.sheet_cost = 300
     with item.add_sheet_item("Заглушка") as sheet:

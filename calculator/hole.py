@@ -1,10 +1,14 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, KW_ONLY
 from abc import ABC, abstractmethod
 from math import pi
 
 
 @dataclass
 class Hole(ABC):
+    _: KW_ONLY
+    count: int = 1
+    through: bool = False
+
     @property
     @abstractmethod
     def length(self) -> float:
@@ -17,10 +21,10 @@ class Hole(ABC):
 
 @dataclass
 class RoundHole(Hole):
-    diameter: float
+    diameter: float = 0.0
 
     def __str__(self) -> str:
-        return f'ф{self.diameter}'
+        return f'Отв. {'скв. ' if self.through else ''}ф{self.diameter} - {self.count} шт'
 
     @property
     def length(self) -> float:
@@ -29,11 +33,11 @@ class RoundHole(Hole):
 
 @dataclass
 class RectHole(Hole):
-    width: float
-    height: float
+    width: float = 0.0
+    height: float = 0.0
 
     def __str__(self) -> str:
-        return f'{self.width}x{self.height}'
+        return f'Отв. {'скв. ' if self.through else ''}{self.width}x{self.height} - {self.count} шт'
 
     @property
     def length(self) -> float:
@@ -42,10 +46,10 @@ class RectHole(Hole):
 
 @dataclass
 class CustomHole(Hole):
-    length: float
+    length: float = 0.0
 
     def __str__(self) -> str:
-        return f'{self.length}'
+        return f'Отв. {'скв. ' if self.through else ''}{self.length} - {self.count} шт'
 
 
 __all__ = ["Hole", "RectHole", "RoundHole", "CustomHole"]

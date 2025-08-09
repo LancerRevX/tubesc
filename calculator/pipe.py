@@ -11,6 +11,7 @@ class Pipe(ABC):
     thickness: float
     incut_cost: float
     cutting_cost: float
+    carrying_cost: float
 
     @property
     @abstractmethod
