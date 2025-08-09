@@ -7,10 +7,10 @@ from . import Cut
 
 @dataclass
 class Pipe(ABC):
-    price: float
+    cost: float
     thickness: float
-    incut_price: float
-    cutting_price: float
+    incut_cost: float
+    cutting_cost: float
 
     @property
     @abstractmethod
@@ -18,7 +18,11 @@ class Pipe(ABC):
         pass
 
     @abstractmethod
-    def cut_length(self, cut: Cut) -> float:
+    def get_cut_length(self, cut: Cut) -> float:
+        pass
+
+    @abstractmethod
+    def get_bended_cut_length(self, bended_cut: Cut) -> float:
         pass
 
 
@@ -33,8 +37,12 @@ class RoundPipe(Pipe):
     def perimeter(self) -> float:
         return self.diameter * pi
 
-    def cut_length(self, cut: Cut):
+    def get_cut_length(self, cut: Cut):
         return self.perimeter / cos(cut.angle / 180 * pi)
+    
+    def get_bended_cut_length(self, bended_cut: Cut):
+        return 0.0
+
 
 
 @dataclass
@@ -50,7 +58,7 @@ class RectPipe(Pipe):
     def perimeter(self) -> float:
         return (self.width + self.height) * 2
 
-    def cut_length(self, cut: Cut):
+    def get_cut_length(self, cut: Cut):
         if cut.angle == 90:
             return self.perimeter
 
@@ -60,3 +68,13 @@ class RectPipe(Pipe):
         else:
             hypotenuse = self.height / sin(cut.angle * 180 / pi)
             return (hypotenuse + self.width) * 2
+        
+    def get_bended_cut_length(self, bended_cut: Cut):
+        angle = bended_cut.angle // 2
+
+        if bended_cut.side == "width":
+            hypotenuse = self.width / sin(angle * 180 / pi)
+            return (hypotenuse * 2 + self.height) * 2
+        else:
+            hypotenuse = self.height / sin(bended_cut.angle * 180 / pi)
+            return (hypotenuse * 2 + self.width) * 2
