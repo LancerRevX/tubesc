@@ -28,7 +28,7 @@ class Order():
 
     @property
     def cutting_cost(self) -> float:
-        return sum(item.cutting_cost for item in self.items)
+        return sum(item.cutting_cost * item.count for item in self.items)
 
     @property
     def adjusted_cutting_price(self) -> float:

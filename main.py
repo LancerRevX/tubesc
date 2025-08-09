@@ -36,6 +36,7 @@ multipliers = Multipliers(work=2.0, materials=1.3, manager=1.1, vat=1.2)
 order = Order(costs, multipliers, 1040, "Проф-система")
 
 with order.add_tube_item("Труба 4500") as item:
+    item.count = 13
     item.is_painted = True
     item.project_hours = 1
     item.transport_cost = 450
@@ -63,6 +64,18 @@ with order.add_tube_item("Труба 4500") as item:
         sheet.bending_count = 2
         sheet.sundries_count = 4
         sheet.riveting_count = 4
+
+with order.add_sheet_item('Лючок') as item:
+    item.sheet_cost = 332
+    item.sheet_area = 98 * 398 * 2
+    item.is_painted = True
+
+with order.add_sheet_item('Кронштейн БП') as item:
+    item.sheet_cost = 153
+    item.sheet_area = 75 * 150 * 2
+    item.sundries_count = 4
+    item.riveting_count = 4
+    item.is_painted = True
 
 order.calculate_price()
 
