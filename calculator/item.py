@@ -1,4 +1,4 @@
-from dataclasses import dataclass  # field
+from dataclasses import dataclass, field, KW_ONLY
 from contextlib import contextmanager
 from abc import ABC, abstractmethod
 
@@ -8,13 +8,14 @@ from . import Tube, Costs, Multipliers, Pipe, Price
 @dataclass
 class BaseItem(ABC):
     name: str
+    _: KW_ONLY
+    count: int = 1
     project_hours: int = 0
     sundry_welding_count: int = 0
     is_painted: bool = False
     is_cleaned: bool = False
     transport_cost: float = 0.0
     is_weld_cleaned: bool = False
-    count: int = 1
 
     def __post_init__(self) -> None:
         self.prices: dict[str, Price] = dict()
@@ -146,7 +147,7 @@ class BaseItem(ABC):
 
 @dataclass
 class SheetItem(BaseItem):
-    sheet_cost: float = 0.0
+    sheet_cost: float
     sheet_area: float = 0.0
     extra_welding_length: float = 0.0
     sundries_count: int = 0
@@ -242,11 +243,13 @@ class SheetItem(BaseItem):
 class TubeItem(BaseItem):
     extra_sundries_count: int = 0
     extra_riveting_count: int = 0
+    tubes: list[Tube] = field(default_factory=list[Tube])
+    sheet_items: list[SheetItem] = field(default_factory=list[SheetItem])
 
     def __post_init__(self):
         super().__post_init__()
-        self.tubes: list[Tube] = []
-        self.sheet_items: list[SheetItem] = []
+        # self.tubes: list[Tube] = []
+        # self.sheet_items: list[SheetItem] = []
 
     def __getitem__(self, key: int) -> Tube:
         return self.tubes[key]
@@ -476,6 +479,6 @@ class TubeItem(BaseItem):
 
     @contextmanager
     def add_sheet_item(self, name: str):
-        item = SheetItem(name)
+        item = SheetItem(name, 0)
         self.sheet_items.append(item)
         yield item

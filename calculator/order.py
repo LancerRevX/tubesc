@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from contextlib import contextmanager
 
 from . import BaseItem, Costs, Multipliers, TubeItem, SheetItem
@@ -6,14 +6,13 @@ from . import BaseItem, Costs, Multipliers, TubeItem, SheetItem
 
 @dataclass
 class Order():
-    costs: Costs
-    multipliers: Multipliers
     number: int
     name: str
     minimum_cutting_cost: int = 500
+    items: list[BaseItem] = field(default_factory=list[BaseItem])
 
-    def __post_init__(self) -> None:
-        self.items: list[BaseItem] = []
+    # def __post_init__(self) -> None:
+    #     self.items: list[BaseItem] = []
 
     def __getitem__(self, key: int) -> BaseItem:
         return self.items[key]
@@ -37,7 +36,7 @@ class Order():
             result = self.minimum_cutting_cost
         return result
 
-    def calculate_price(self):
+    def calculate(self, costs: Costs, multipliers: Multipliers):
         cutting_price = self.cutting_cost
         adjusted_cutting_price = self.adjusted_cutting_price
         for item in self.items:
@@ -45,7 +44,7 @@ class Order():
                 adjusted_cutting_price / cutting_price * item.cutting_cost
             )
             item.calculate_price(
-                item_cutting_price, self.costs, self.multipliers
+                item_cutting_price, costs, multipliers
             )
 
     @contextmanager
@@ -56,6 +55,6 @@ class Order():
 
     @contextmanager
     def add_sheet_item(self, name: str):
-        item = SheetItem(name)
+        item = SheetItem(name, 0)
         self.items.append(item)
         yield item
