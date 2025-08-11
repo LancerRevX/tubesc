@@ -24,7 +24,7 @@ class RoundHole(Hole):
     diameter: float = 0.0
 
     def __str__(self) -> str:
-        return f'Отв. {'скв. ' if self.through else ''}ф{self.diameter} - {self.count} шт'
+        return f'Отв. {"скв. " if self.through else ""}ф{self.diameter} - {self.count} шт'
 
     @property
     def length(self) -> float:
@@ -37,7 +37,7 @@ class RectHole(Hole):
     height: float = 0.0
 
     def __str__(self) -> str:
-        return f'Отв. {'скв. ' if self.through else ''}{self.width}x{self.height} - {self.count} шт'
+        return f'Отв. {"скв. " if self.through else ""}{self.width}x{self.height} - {self.count} шт'
 
     @property
     def length(self) -> float:
@@ -49,7 +49,7 @@ class CustomHole(Hole):
     length: float = 0.0
 
     def __str__(self) -> str:
-        return f'Отв. {'скв. ' if self.through else ''}{self.length} - {self.count} шт'
+        return f'Отв. {"скв. " if self.through else ""}{self.length} - {self.count} шт'
 
 
 __all__ = ["Hole", "RectHole", "RoundHole", "CustomHole"]

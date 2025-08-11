@@ -10,7 +10,7 @@ class BaseItem(ABC):
     name: str
     _: KW_ONLY
     count: int = 1
-    project_hours: int = 0
+    project_hours: float = 0
     sundry_welding_count: int = 0
     is_painted: bool = False
     is_cleaned: bool = False
@@ -105,11 +105,7 @@ class BaseItem(ABC):
         project_cost = self.project_hours * costs.project / self.count
         self.prices["project"] = self.get_work_price(project_cost, multipliers)
 
-    def calculate_cleaning_price(self, costs: Costs, multipliers: Multipliers):
-        cleaning_cost = self.area * costs.cleaning
-        self.prices["cleaning"] = self.get_work_price(
-            cleaning_cost, multipliers
-        )
+    
 
     def calculate_transport_price(self, costs: Costs, multipliers: Multipliers):
         self.prices["transport"] = self.get_work_price(
@@ -218,13 +214,21 @@ class SheetItem(BaseItem):
         self.calculate_weld_cleaning_price(costs, multipliers)
         self.calculate_transport_price(costs, multipliers)
         self.calculate_project_price(costs, multipliers)
-        # self.calculate_cleaning_price(costs, multipliers)
+        self.calculate_cleaning_price(costs, multipliers)
         self.calculate_painting_price(costs, multipliers)
         self.calculate_sundries_price(costs, multipliers)
 
         self.prices["total"] = Price(
             cost=sum(price.cost for price in self.prices.values()),
             final=sum(price.final for price in self.prices.values()),
+        )
+
+    def calculate_cleaning_price(self, costs: Costs, multipliers: Multipliers):
+        if not self.is_cleaned:
+            self.prices['cleaning'] = Price()
+        cleaning_cost = self.area * costs.cleaning
+        self.prices["cleaning"] = self.get_work_price(
+            cleaning_cost, multipliers
         )
 
     def calculate_weld_cleaning_price(
@@ -270,7 +274,7 @@ class TubeItem(BaseItem):
                 result += f"\t\t{tube}: {tube.pipe.cost * 1000} руб/м, {tube.pipe_cost} руб\n"
             result += "\n"
 
-        result += f"\tРезка: {self.prices['cutting']}\n"
+        result += f"\tРезка: {self.prices['cutting']} \n"
         for tube in self.tubes:
             result += f"\t\t{tube}: {tube.incuts_count} врезки / {tube.cutting_length:,.2f} мм, {tube.cutting_cost:,.2f} руб\n"
             if tube.left_cut is not None:
@@ -447,6 +451,12 @@ class TubeItem(BaseItem):
     def calculate_pipe_price(self, costs: Costs, multipliers: Multipliers):
         pipe_cost = sum(tube.pipe_cost for tube in self.tubes)
         self.prices["pipe"] = self.get_materials_price(pipe_cost, multipliers)
+
+    def calculate_cleaning_price(self, costs: Costs, multipliers: Multipliers):
+        cleaning_cost = sum(tube.area * costs.cleaning for tube in self.tubes if tube.is_cleaned)
+        self.prices["cleaning"] = self.get_work_price(
+            cleaning_cost, multipliers
+        )
 
     def calculate_sheet_price(self, costs: Costs, multipliers: Multipliers):
         sheet_cost = sum(sheet.sheet_cost for sheet in self.sheet_items)

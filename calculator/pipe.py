@@ -39,7 +39,7 @@ class RoundPipe(Pipe):
         return self.diameter * pi
 
     def get_cut_length(self, cut: Cut):
-        return self.perimeter / cos(cut.angle / 180 * pi)
+        return self.perimeter / sin(cut.angle / 180 * pi)
     
     def get_bended_cut_length(self, bended_cut: Cut):
         return 0.0

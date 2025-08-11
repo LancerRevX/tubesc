@@ -63,7 +63,9 @@ class Tube:
 
     @property
     def cutting_length(self) -> float:
-        result = sum(hole.length for hole in self.holes)
+        result = 0.0
+        for hole in self.holes:
+            result += hole.length * hole.count * (2 if hole.through else 1)
         result += sum(
             self.pipe.get_bended_cut_length(cut) for cut in self.bended_cuts
         )
