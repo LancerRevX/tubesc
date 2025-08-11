@@ -1,3 +1,5 @@
+"""tubesc example"""
+
 from calculator import (
     Order,
     RectPipe,
@@ -11,8 +13,6 @@ from calculator import (
     SheetItem,
 )
 
-if __name__ != '__main__':
-    raise
 
 pipe = RectPipe(
     width=100,
