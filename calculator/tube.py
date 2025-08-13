@@ -15,7 +15,9 @@ class Tube:
     left_cut: Cut | None = field(default_factory=Cut)
     right_cut: Cut | None = field(default_factory=Cut)
     extra_bending_count: int = 0
+    threading_count: int = 0
     bended_cuts: list[Cut] = field(default_factory=list[Cut])
+    countersink_count: int = 0
 
     def __post_init__(self) -> None:
         self.price: Price | None = None

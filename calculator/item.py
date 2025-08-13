@@ -60,6 +60,16 @@ class BaseItem(ABC):
     def riveting_count(self) -> int:
         pass
 
+    @property
+    @abstractmethod
+    def countersink_count(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def threading_count(self) -> int:
+        pass
+
     @abstractmethod
     def calculate_price(
         self,
@@ -101,11 +111,23 @@ class BaseItem(ABC):
             riveting_cost, multipliers
         )
 
+    def calculate_countersink_price(
+        self, costs: Costs, multipliers: Multipliers
+    ):
+        countersink_cost = self.countersink_count * costs.countersink
+        self.prices["countersink"] = self.get_work_price(
+            countersink_cost, multipliers
+        )
+
+    def calculate_threading_price(self, costs: Costs, multipliers: Multipliers):
+        threading_cost = self.threading_count * costs.threading
+        self.prices["threading"] = self.get_work_price(
+            threading_cost, multipliers
+        )
+
     def calculate_project_price(self, costs: Costs, multipliers: Multipliers):
         project_cost = self.project_hours * costs.project / self.count
         self.prices["project"] = self.get_work_price(project_cost, multipliers)
-
-    
 
     def calculate_transport_price(self, costs: Costs, multipliers: Multipliers):
         self.prices["transport"] = self.get_work_price(
@@ -144,11 +166,18 @@ class BaseItem(ABC):
 @dataclass
 class SheetItem(BaseItem):
     sheet_cost: float
-    sheet_area: float = 0.0
+    sheet_area: float | None = None
     extra_welding_length: float = 0.0
-    sundries_count: int = 0
-    bending_count: int = 0
-    riveting_count: int = 0
+    sundries_count: int = 0  # pyright: ignore[reportIncompatibleMethodOverride]
+    bending_count: int = 0  # pyright: ignore[reportIncompatibleMethodOverride]
+    riveting_count: int = 0  # pyright: ignore[reportIncompatibleMethodOverride]
+    countersink_count: int = 0 # pyright: ignore[reportIncompatibleMethodOverride]
+    threading_count: int = 0 # pyright: ignore[reportIncompatibleMethodOverride]
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.is_painted and self.sheet_area is None:
+            raise ValueError('is_painted required sheet_area to be set')
 
     def __str__(self) -> str:
         result = f"{self.name}: {self.prices['total']}\n"
@@ -185,7 +214,7 @@ class SheetItem(BaseItem):
 
     @property
     def area(self) -> float:
-        return self.sheet_area
+        return self.sheet_area # type: ignore
 
     @property
     def incuts_count(self):
@@ -217,6 +246,8 @@ class SheetItem(BaseItem):
         self.calculate_cleaning_price(costs, multipliers)
         self.calculate_painting_price(costs, multipliers)
         self.calculate_sundries_price(costs, multipliers)
+        self.calculate_countersink_price(costs, multipliers)
+        self.calculate_threading_price(costs, multipliers)
 
         self.prices["total"] = Price(
             cost=sum(price.cost for price in self.prices.values()),
@@ -225,7 +256,8 @@ class SheetItem(BaseItem):
 
     def calculate_cleaning_price(self, costs: Costs, multipliers: Multipliers):
         if not self.is_cleaned:
-            self.prices['cleaning'] = Price()
+            self.prices["cleaning"] = Price()
+            return
         cleaning_cost = self.area * costs.cleaning
         self.prices["cleaning"] = self.get_work_price(
             cleaning_cost, multipliers
@@ -271,7 +303,7 @@ class TubeItem(BaseItem):
             for tube in self.tubes:
                 if tube.pipe_cost == 0:
                     continue
-                result += f"\t\t{tube}: {tube.pipe.cost * 1000} руб/м, {tube.pipe_cost} руб\n"
+                result += f"\t\t{tube}: {tube.pipe.cost * 1000:,.2f} руб/м, {tube.pipe_cost:,.2f} руб\n"
             result += "\n"
 
         result += f"\tРезка: {self.prices['cutting']} \n"
@@ -294,7 +326,9 @@ class TubeItem(BaseItem):
             for sheet in self.sheet_items:
                 if sheet.welding_length == 0:
                     continue
-                result += f"\t\t{sheet.name}: {sheet.welding_length:,.2f} мм\n"
+                result += f"\t\t{sheet.name} - {sheet.count} шт: {sheet.welding_length:,.2f} мм * {sheet.count} = {sheet.welding_length * sheet.count:,.2f} мм\n"
+            if self.sundry_welding_count > 0:
+                result += f"\t\tТочки - {self.sundry_welding_count} шт: 10 * {self.sundry_welding_count} = {self.sundry_welding_count * 10} мм\n"
             result += "\n"
 
         if self.prices["weld_cleaning"].cost > 0:
@@ -342,6 +376,26 @@ class TubeItem(BaseItem):
                 result += f"\t\t{sheet.name}: {sheet.riveting_count} шт\n"
             result += "\n"
 
+        if self.prices["countersink"].cost > 0:
+            result += f"\tЗенковка: {self.countersink_count} шт, {self.prices['countersink']}\n"
+            for sheet in self.sheet_items:
+                if sheet.countersink_count == 0:
+                    continue
+                result += f"\t\t{sheet.name}: {sheet.countersink_count} шт\n"
+            result += "\n"
+
+        if self.prices["threading"].cost > 0:
+            result += f"\tНарезка резьбы: {self.threading_count} шт, {self.prices['threading']}\n"
+            for sheet in self.sheet_items:
+                if sheet.threading_count == 0:
+                    continue
+                result += f"\t\t{sheet.name}: {sheet.threading_count} шт\n"
+            for tube in self.tubes:
+                if tube.threading_count == 0:
+                    continue
+                result += f"\t\t{tube}: {tube.threading_count} шт\n"
+            result += "\n"
+
         if self.prices["bending"].cost > 0:
             result += (
                 f"\tГибка: {self.bending_count} шт, {self.prices['bending']}\n"
@@ -361,7 +415,10 @@ class TubeItem(BaseItem):
         if self.prices["sheet"].cost > 0:
             result += f"\tЛистовой металл: {self.prices['sheet']}\n"
             for sheet in self.sheet_items:
-                result += f"\t\t{sheet.name}: {sheet.sheet_cost:,.2f} руб\n"
+                result += f"\t\t{sheet.name}"
+                if sheet.count > 1:
+                    result += f" - {sheet.count} шт"
+                result += f": {sheet.sheet_cost:,.2f} руб\n"
             result += "\n"
 
         if self.prices["transport"].cost > 0:
@@ -377,6 +434,16 @@ class TubeItem(BaseItem):
             sum(sheet.sundries_count for sheet in self.sheet_items)
             + self.extra_sundries_count
         )
+
+    @property
+    def countersink_count(self) -> int:
+        return sum(sheet.countersink_count * sheet.count for sheet in self.sheet_items) + sum(tube.countersink_count for tube in self.tubes)
+
+    @property
+    def threading_count(self) -> int:
+        return sum(
+            sheet.threading_count * sheet.count for sheet in self.sheet_items
+        ) + sum(tube.threading_count for tube in self.tubes)
 
     @property
     def bending_count(self) -> int:
@@ -409,7 +476,9 @@ class TubeItem(BaseItem):
     def welding_length(self) -> float:
         return (
             sum(tube.welding_length for tube in self.tubes)
-            + sum(sheet.welding_length for sheet in self.sheet_items)
+            + sum(
+                sheet.welding_length * sheet.count for sheet in self.sheet_items
+            )
             + self.sundry_welding_count * 10
         )
 
@@ -442,6 +511,8 @@ class TubeItem(BaseItem):
         self.calculate_painting_price(costs, multipliers)
         self.calculate_sundries_price(costs, multipliers)
         self.calculate_carrying_price(multipliers)
+        self.calculate_countersink_price(costs, multipliers)
+        self.calculate_threading_price(costs, multipliers)
 
         self.prices["total"] = Price(
             cost=sum(price.cost for price in self.prices.values()),
@@ -453,13 +524,17 @@ class TubeItem(BaseItem):
         self.prices["pipe"] = self.get_materials_price(pipe_cost, multipliers)
 
     def calculate_cleaning_price(self, costs: Costs, multipliers: Multipliers):
-        cleaning_cost = sum(tube.area * costs.cleaning for tube in self.tubes if tube.is_cleaned)
+        cleaning_cost = sum(
+            tube.area * costs.cleaning for tube in self.tubes if tube.is_cleaned
+        )
         self.prices["cleaning"] = self.get_work_price(
             cleaning_cost, multipliers
         )
 
     def calculate_sheet_price(self, costs: Costs, multipliers: Multipliers):
-        sheet_cost = sum(sheet.sheet_cost for sheet in self.sheet_items)
+        sheet_cost = sum(
+            sheet.sheet_cost * sheet.count for sheet in self.sheet_items
+        )
         self.prices["sheet"] = self.get_materials_price(sheet_cost, multipliers)
 
     def calculate_weld_cleaning_price(

@@ -16,6 +16,14 @@ class Order():
 
     def __getitem__(self, key: int) -> BaseItem:
         return self.items[key]
+    
+    def __str__(self) -> str:
+        result = f'Заказ №{self.number}\n'
+        result += f'Резка: {self.cutting_length:,.2f} мм, {self.cutting_cost:,.2f} руб <= {self.adjusted_cutting_price:,.2f} руб\n'
+
+        for item in self.items:
+            result += str(item)
+        return result
 
     @property
     def incuts_count(self) -> int:

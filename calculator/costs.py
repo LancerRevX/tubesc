@@ -10,4 +10,6 @@ class Costs:
     paint: float
     riveting: float
     bending: float
+    countersink: float
+    threading: float
     project: float
