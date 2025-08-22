@@ -13,3 +13,4 @@ class Costs:
     countersink: float
     threading: float
     project: float
+    drying: float

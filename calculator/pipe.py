@@ -77,5 +77,5 @@ class RectPipe(Pipe):
             hypotenuse = self.width / sin(angle * 180 / pi)
             return (hypotenuse * 2 + self.height) * 2
         else:
-            hypotenuse = self.height / sin(bended_cut.angle * 180 / pi)
+            hypotenuse = self.height / sin(angle * 180 / pi)
             return (hypotenuse * 2 + self.width) * 2

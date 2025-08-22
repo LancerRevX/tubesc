@@ -1,25 +1,25 @@
 from dataclasses import dataclass, field
 from contextlib import contextmanager
 
-from . import BaseItem, Costs, Multipliers, TubeItem, SheetItem
+from . import BaseItem, Costs, Multipliers, TubeItem, SheetItem, Price
 
 
 @dataclass
-class Order():
+class Order:
     number: int
     name: str
     minimum_cutting_cost: int = 500
     items: list[BaseItem] = field(default_factory=list[BaseItem])
 
-    # def __post_init__(self) -> None:
-    #     self.items: list[BaseItem] = []
+    def __post_init__(self) -> None:
+        self.price: Price | None = None
 
     def __getitem__(self, key: int) -> BaseItem:
         return self.items[key]
-    
+
     def __str__(self) -> str:
-        result = f'Заказ №{self.number}\n'
-        result += f'Резка: {self.cutting_length:,.2f} мм, {self.cutting_cost:,.2f} руб <= {self.adjusted_cutting_price:,.2f} руб\n'
+        result = f"Заказ №{self.number}: {self.price}\n"
+        result += f"Резка: {self.cutting_length:,.2f} мм, {self.cutting_cost:,.2f} руб <= {self.adjusted_cutting_price:,.2f} руб\n"
 
         for item in self.items:
             result += str(item)
@@ -48,12 +48,21 @@ class Order():
         cutting_price = self.cutting_cost
         adjusted_cutting_price = self.adjusted_cutting_price
         for item in self.items:
-            item_cutting_price = (
-                adjusted_cutting_price / cutting_price * item.cutting_cost
-            )
-            item.calculate_price(
-                item_cutting_price, costs, multipliers
-            )
+            if item.cutting_cost > 0:
+                item_cutting_price = (
+                    adjusted_cutting_price / cutting_price * item.cutting_cost
+                )
+            else:
+                item_cutting_price = 0
+            item.calculate_price(item_cutting_price, costs, multipliers)
+
+        cost = sum(
+            item.prices["total"].cost * item.count for item in self.items
+        )
+        final = sum(
+            item.prices["total"].final * item.count for item in self.items
+        )
+        self.price = Price(cost, final)
 
     @contextmanager
     def add_tube_item(self, name: str):

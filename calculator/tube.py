@@ -7,6 +7,7 @@ from . import Pipe, Hole, Cut, Costs, Multipliers, Price
 class Tube:
     pipe: Pipe
     length: float
+    count: int = 1
     is_ours: bool = True
     is_weld_cleaned: bool = False
     is_bended: bool = True
@@ -18,18 +19,21 @@ class Tube:
     threading_count: int = 0
     bended_cuts: list[Cut] = field(default_factory=list[Cut])
     countersink_count: int = 0
+    sundries_count: int = 0
+    riveting_count: int = 0
+    sundry_welding_count: int = 0
 
     def __post_init__(self) -> None:
         self.price: Price | None = None
 
     def __str__(self) -> str:
-        return f"{self.length} {self.pipe}"
+        return f"{self.length} {self.pipe} - {self.count} шт"
 
     @property
     def bending_count(self) -> int:
         if not self.is_bended:
             return 0
-        return len(self.bended_cuts) + self.extra_bending_count
+        return sum(cut.count for cut in self.bended_cuts) + self.extra_bending_count
 
     @property
     def pipe_cost(self) -> float:
@@ -60,7 +64,7 @@ class Tube:
             (self.left_cut is not None)
             + (self.right_cut is not None)
             + holes_count
-            + len(self.bended_cuts)
+            + sum(cut.count for cut in self.bended_cuts)
         )
 
     @property
@@ -69,7 +73,7 @@ class Tube:
         for hole in self.holes:
             result += hole.length * hole.count * (2 if hole.through else 1)
         result += sum(
-            self.pipe.get_bended_cut_length(cut) for cut in self.bended_cuts
+            self.pipe.get_bended_cut_length(cut) * cut.count for cut in self.bended_cuts
         )
         if self.left_cut is not None:
             result += self.pipe.get_cut_length(self.left_cut)
@@ -94,8 +98,9 @@ class Tube:
                 self.pipe.get_cut_length(self.right_cut)
                 * self.right_cut.welding_ratio
             )
+        result += self.sundry_welding_count * 10
         result += sum(
-            self.pipe.get_bended_cut_length(cut) / 2 for cut in self.bended_cuts
+            self.pipe.get_bended_cut_length(cut) / 2 * cut.welding_ratio * cut.count for cut in self.bended_cuts
         )
         return result
 

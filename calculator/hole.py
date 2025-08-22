@@ -46,7 +46,7 @@ class RectHole(Hole):
 
 @dataclass
 class CustomHole(Hole):
-    length: float = 0.0
+    length: float = 0.0 # pyright: ignore[reportIncompatibleMethodOverride]
 
     def __str__(self) -> str:
         return f'Отв. {"скв. " if self.through else ""}{self.length} - {self.count} шт'
